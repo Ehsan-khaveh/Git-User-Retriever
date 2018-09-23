@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Github - Retrieve User</string>
+    <string name="title_activity_login">Sign in</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_username">Github Username</string>
+    <string name="set_token">Set Token</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="action_retrieve_user">Retrieve User</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email completions."</string>
+    <string name="user_not_found">User was not found</string>
+    <string name="enter_token">Enter your Github Token</string>
+    <string name="init_instructions">Set the authorization token in the toolbar menu</string>
+
+
+</resources>
