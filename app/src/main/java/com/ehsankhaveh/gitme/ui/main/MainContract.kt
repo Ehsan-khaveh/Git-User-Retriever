@@ -5,8 +5,7 @@ import com.ehsankhaveh.gitme.utils.BaseContract
 
 class MainContract {
     interface View: BaseContract.View {
-        fun showSettingsFragment()
-        fun showUserDetails(user: User)
+        fun showResults(users: ArrayList<User>)
         fun showError(message: String)
         fun showProgress(show: Boolean)
     }

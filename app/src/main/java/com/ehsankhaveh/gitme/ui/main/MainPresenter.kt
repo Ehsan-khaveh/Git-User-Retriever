@@ -1,19 +1,23 @@
 package com.ehsankhaveh.gitme.ui.main
 
-import android.content.Context
 import com.ehsankhaveh.gitme.api.ApiServiceInterface
-import com.ehsankhaveh.gitme.models.User
-import com.ehsankhaveh.gitme.utils.SharedPreferenceHelper
+import com.ehsankhaveh.gitme.di.presenter.DaggerPresenterComponent
+import com.ehsankhaveh.gitme.di.presenter.PresenterModule
+import com.ehsankhaveh.gitme.models.UserList
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
 
 class MainPresenter: MainContract.Presenter {
 
-    private lateinit var api: ApiServiceInterface
-    private val subscriptions = CompositeDisposable()
+    @Inject lateinit var api: ApiServiceInterface
+    @Inject lateinit var subscriptions: CompositeDisposable
     private lateinit var view: MainContract.View
-    private lateinit var context: Context
+
+    init {
+        injectDependencies()
+    }
 
     override fun subscribe() {}
 
@@ -21,28 +25,33 @@ class MainPresenter: MainContract.Presenter {
         subscriptions.clear()
     }
 
-    override fun attach(view: MainContract.View, context: Context) {
+    override fun attach(view: MainContract.View) {
         this.view = view
-        this.context = context
-        this.api = ApiServiceInterface.create(context)
     }
 
     override fun onRetrieveUserClick(username: String) {
         view.showProgress(true)
 
-        var subscribe = api.getUser(username)
+        var subscribe = api.searchUsers(username)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe({ user: User? ->
-                                view.showProgress(false)
-                                view.showUserDetails(user!!)
+                            .subscribe({ userList: UserList ->
+                                view.showResults(userList.items)
                             },{ error ->
-                                view.showProgress(false)
                                 view.showError(error.message!!)
-
+                            }, {
+                                view.showProgress(false)
                             })
 
         subscriptions.add(subscribe)
+    }
+
+    private fun injectDependencies() {
+        var component = DaggerPresenterComponent.builder()
+                .presenterModule(PresenterModule())
+                .build()
+
+        component.inject(this)
     }
 
 }

@@ -2,26 +2,26 @@ package com.ehsankhaveh.gitme.ui.main
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
+import android.support.v7.widget.LinearLayoutManager
 import com.ehsankhaveh.gitme.R
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import com.ehsankhaveh.gitme.di.component.DaggerActivityComponent
-import com.ehsankhaveh.gitme.di.module.ActivityModule
+import com.ehsankhaveh.gitme.di.activity.ActivityModule
+import com.ehsankhaveh.gitme.di.activity.DaggerActivityComponent
 import com.ehsankhaveh.gitme.models.User
-import com.ehsankhaveh.gitme.ui.settings.SettingsFragment
-import com.squareup.picasso.Picasso
+import com.ehsankhaveh.gitme.utils.checkInternet
+import com.ehsankhaveh.gitme.utils.hideKeyboard
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.user_details.*
 import javax.inject.Inject
 
 
 class MainActivity : AppCompatActivity(), MainContract.View {
 
-    @Inject
-    lateinit var presenter: MainContract.Presenter
+    @Inject lateinit var presenter: MainContract.Presenter
+    @Inject lateinit var userListAdapter: UserListAdapter
+    @Inject lateinit var linearLayoutManager: LinearLayoutManager
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -29,40 +29,16 @@ class MainActivity : AppCompatActivity(), MainContract.View {
 
         // setting the view ad toolbar for the activity
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
 
         // injecting the dependency for this activity
         injectDependency()
 
         // attaching this activity as view for our injected presenter
-        presenter.attach(this, baseContext)
+        presenter.attach(this)
 
-        // enable "Retrieve User" button only when there is a username typed in
-        username.addTextChangedListener(object: TextWatcher{
-            override fun afterTextChanged(s: Editable?) {}
+        userList.layoutManager = linearLayoutManager
+        userList.adapter = userListAdapter
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                when (s?.length) {
-                    0 -> search_button.isEnabled = false
-                    else -> search_button.isEnabled = true
-                }
-            }
-        })
-
-        // attach listener to search_button
-        search_button.setOnClickListener {
-            error.visibility = View.GONE
-            user_info.visibility = View.GONE
-            presenter.onRetrieveUserClick(username.text.toString())
-        }
-
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        presenter.unsubscribe()
     }
 
     // function to show/hide the progress bar
@@ -70,31 +46,17 @@ class MainActivity : AppCompatActivity(), MainContract.View {
         if (show) {
             progress_bar.visibility = View.VISIBLE
         } else {
-            progress_bar.visibility = View.GONE
+            progress_bar.visibility = View.INVISIBLE
         }
     }
 
-    // function to show settings fragment when user clicks on Settings toolbar item
-    override fun showSettingsFragment() {
-        val fm = supportFragmentManager;
-        val settingsfragment = SettingsFragment().newInstance()
-        settingsfragment.show(fm, "fragment_set_token");
-    }
-
-    override fun showUserDetails(user: User) {
-        user_name.text = user.name
-        user_bio.text = user.bio
-        user_public_repos.text = user.public_repos.toString()+" public repos"
-
-        //Picasso.get().load(user.avatar_url).into(user_avatar);
-
-        user_info.visibility = View.VISIBLE
-
+    override fun showResults(users: ArrayList<User>) {
+        userListAdapter.refreshUserList(users)
     }
 
     override fun showError(message: String) {
-        error.text = message
-        error.visibility = View.VISIBLE
+        tv_main_error.text = message
+        tv_main_error.visibility = View.VISIBLE
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -104,17 +66,21 @@ class MainActivity : AppCompatActivity(), MainContract.View {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        when (item.itemId) {
-            R.id.action_change_token -> {
-                showSettingsFragment()
-                return true
+        return when (item.itemId) {
+            R.id.action_search -> {
+                tv_main_error.visibility = View.GONE
+                userListAdapter.refreshUserList(arrayListOf())
+                hideKeyboard()
+                if(checkInternet())
+                    presenter.onRetrieveUserClick(username.text.toString())
+                else
+                    showError(getString(R.string.error_no_internet))
+                true
             }
             else -> {
-                return super.onOptionsItemSelected(item)
+                super.onOptionsItemSelected(item)
             }
-
         }
-
     }
 
     private fun injectDependency() {
@@ -123,5 +89,30 @@ class MainActivity : AppCompatActivity(), MainContract.View {
                 .build()
 
         activityComponent.inject(this)
+    }
+
+    /*
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        listState = userList.layoutManager?.onSaveInstanceState()
+        Log.e("mamaaaaaa", "ba")
+        outState.putParcelable(LIST_STATE_KEY, listState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Log.e("babaaaaaa", "ba")
+        listState = savedInstanceState.getParcelable(LIST_STATE_KEY)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.e("doneeee", "ba")
+        userList.layoutManager?.onRestoreInstanceState(listState)
+    }
+    */
+    override fun onDestroy() {
+        presenter.unsubscribe()
+        super.onDestroy()
     }
 }

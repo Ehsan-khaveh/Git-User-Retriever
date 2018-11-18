@@ -1,6 +1,13 @@
 package com.ehsankhaveh.gitme.models
 
-data class User(val id: Int, val name: String, val login: String, val bio: String, val avatar_url: String, val public_repos: Int)
+data class User(
+        val id: Int,
+        val name: String,
+        val login: String,
+        val followers: String,
+        val following: String,
+        val avatar_url: String,
+        val public_repos: Int)
 
 /*
 {

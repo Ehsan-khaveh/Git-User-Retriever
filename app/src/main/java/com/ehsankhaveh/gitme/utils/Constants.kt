@@ -5,5 +5,6 @@ class Constants {
         const val BASE_URL = "https://api.github.com/"
         const val PREFERENCE_NAME = "AppSharedPreferences"
         const val PREFERENCE_TOKEN = "GitToken"
+        const val LOGIN_KEY = "LOGIN"
     }
 }
